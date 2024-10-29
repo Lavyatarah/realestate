@@ -1,0 +1,117 @@
+<?xml version="1.0"?>
+<odoo>
+    <!-- Search View -->
+    <record id="estate_property_view_search" model="ir.ui.view">
+        <field name="name">estate.property.view.search</field>
+        <field name="model">estate.property</field>
+        <field name="arch" type="xml">
+            <search string="Search Properties">
+                <field name="name" placeholder="Property Title"/>
+                <field name="postcode" placeholder="Postcode"/>
+                <field name="state" placeholder="State"/>
+                <field name="property_type_id" placeholder="Property Type"/>
+                <field name="tag_ids" placeholder="Tags"/> <!-- Added Tag Field -->
+
+                <filter string="Available Properties" name="filter_available"
+                        domain="[('state', 'in', ['New', 'Offer Received']), ('active', '=', True)]"/>
+                <filter string="Active" name="active" domain="[('active', '=', True)]"/>
+                <filter string="Inactive" name="inactive" domain="[('active', '=', False)]"/>
+                <separator/>
+                <filter string="New" name="state_new" domain="[('state', '=', 'New')]"/>
+                <filter string="Offer Received" name="state_offer_received" domain="[('state', '=', 'Offer Received')]"/>
+                <filter string="Offer Accepted" name="state_offer_accepted" domain="[('state', '=', 'Offer Accepted')]"/>
+                <filter string="Sold" name="state_sold" domain="[('state', '=', 'Sold')]"/>
+                <filter string="Cancelled" name="state_cancelled" domain="[('state', '=', 'Cancelled')]"/>
+                <group expand="1" string="Group By">
+                    <filter string="Property Type" name="group_property_type" context="{'group_by': 'property_type_id'}"/>
+                    <filter string="Tags" name="group_tags" context="{'group_by': 'tag_ids'}"/> <!-- Group by Tags -->
+                    <filter string="Availability" name="filter_availability" domain="[('availability', '=', True)]"/> <!-- Availability Filter -->
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Form View -->
+    <record id="estate_property_view_form" model="ir.ui.view">
+        <field name="name">estate.property.form</field>
+        <field name="model">estate.property</field>
+        <field name="arch" type="xml">
+            <form string="Estate Property">
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" class="mb16" required="1"/>
+                        </h1>
+                        <field name="active" invisible="1"/>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="property_type_id"/> <!-- Property Type -->
+                            <field name="description"/>
+                            <field name="postcode"/>
+                            <field name="date_availability"/>
+                            <field name="tag_ids" widget="many2many_tags"/> <!-- Added Tags Field with Widget -->
+                        </group>
+                        <group>
+                            <field name="expected_price"/>
+                            <field name="selling_price" readonly="1"/>
+                            <field name="bedrooms"/>
+                            <field name="living_area"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="facades"/>
+                        <field name="garage"/>
+                        <field name="garden"/>
+                        <field name="garden_area"/>
+                        <field name="garden_orientation"/>
+                        <field name="state" required="1"/>
+                        <field name="total_area" readonly="1"/>
+                        <field name="best_price" readonly="1"/>
+                        <field name="availability"/> <!-- Added Availability Field -->
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Tree View -->
+    <record id="estate_property_view_tree" model="ir.ui.view">
+        <field name="name">estate.property.tree</field>
+        <field name="model">estate.property</field>
+        <field name="arch" type="xml">
+            <tree string="Properties">
+                <field name="name"/>
+                <field name="property_type_id"/> <!-- Property Type -->
+                <field name="state"/>
+                <field name="expected_price"/>
+                <field name="selling_price"/>
+                <field name="date_availability"/>
+                <field name="active"/>
+                <field name="tag_ids"/> <!-- Added Tags Field -->
+                <field name="availability"/> <!-- Added Availability Field -->
+            </tree>
+        </field>
+    </record>
+
+    <!-- Action to Open Estate Properties -->
+    <record id="action_estate_property" model="ir.actions.act_window">
+        <field name="name">Estate Properties</field>
+        <field name="res_model">estate.property</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Define new estate properties
+            </p>
+            <p>
+                Use this model to manage real estate properties, track their availability, and manage offers.
+            </p>
+        </field>
+    </record>
+
+    <!-- Menu for Estate Properties -->
+    <record id="menu_estate_property" model="ir.ui.menu">
+        <field name="name">Estate Properties</field>
+        <field name="action" ref="action_estate_property"/>
+    </record>
+</odoo>

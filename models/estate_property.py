@@ -1,0 +1,120 @@
+# estate_property.py
+from datetime import date, timedelta  # Import the required modules
+from odoo import models, fields, api
+
+class EstateProperty(models.Model):
+    _name = 'estate.property'
+    _description = 'Real Estate Property'
+
+    name = fields.Char(string="Title", required=True)
+
+    # Add the Many2many relationship for tags
+    tag_ids = fields.Many2many(
+        'estate.property.tag',
+        string="Tags"
+    )
+
+    buyer_id = fields.Many2one(
+        'res.partner', 
+        string="Buyer", 
+        copy=False  # Do not copy the buyer field
+    )
+    salesperson_id = fields.Many2one(
+        'res.users', 
+        string="Salesperson", 
+        default=lambda self: self.env.user  # Default to current user
+    )
+
+    property_type_id = fields.Many2one(
+        'estate.property.type', 
+        string="Property Type"
+    )
+
+    description = fields.Text(string="Description")
+    postcode = fields.Char(string="Postcode")
+
+    date_availability = fields.Date(
+        string="Date of Availability",
+        default=lambda self: fields.Date.to_string(date.today() + timedelta(days=90)),
+        copy=False  # Prevent copying
+    )
+    selling_price = fields.Float(string="Selling Price", readonly=True, copy=False)  # Read-only and prevent copying
+    bedrooms = fields.Integer(string="Bedrooms", default=2)
+    living_area = fields.Integer(string="Living Area (sqm)")
+    facades = fields.Integer(string="Number of Facades")
+    garage = fields.Boolean(string="Garage")
+    garden = fields.Boolean(string="Garden")
+    garden_area = fields.Integer(string="Garden Area (sqm)")
+
+    # Total area computed as the sum of living_area and garden_area
+    total_area = fields.Float(string="Total Area (sqm)", compute="_compute_total_area", store=True)
+
+    # Best offer price computed from related offers
+    best_price = fields.Float(string="Best Offer Price", compute="_compute_best_price", store=True)
+
+    # Define garden orientation choices
+    garden_orientation = fields.Selection(
+        [
+            ('north', 'North'),
+            ('south', 'South'),
+            ('east', 'East'),
+            ('west', 'West')
+        ],
+        string="Garden Orientation"
+    )
+    active = fields.Boolean('Active', default=True)
+
+    state = fields.Selection(
+        [
+            ('new', 'New'),
+            ('offer_received', 'Offer Received'),
+            ('offer_accepted', 'Offer Accepted'),
+            ('sold', 'Sold'),
+            ('cancelled', 'Cancelled')
+        ],
+        string="State",
+        required=True,
+        default='new',  # Default value set to 'New'
+        copy=False  # Prevent copying
+    )
+
+    # Add the One2many relationship for offers
+    offer_ids = fields.One2many(
+        'estate.property.offer',  # Model name for the offers
+        'property_id',           # Field in the offer model that relates to this property
+        string="Offers"          # Label for the field
+    )
+
+    validity = fields.Integer(string="Validity (Days)", default=7)  # Default to 7 days
+    date_deadline = fields.Date(string="Deadline Date", compute="_compute_date_deadline", store=True)
+    availability = fields.Boolean(string="Available", default=True)  # Add availability field
+
+    @api.depends('living_area', 'garden_area')
+    def _compute_total_area(self):
+        for property in self:
+            property.total_area = (property.living_area or 0) + (property.garden_area or 0)
+
+    @api.depends('offer_ids.price')
+    def _compute_best_price(self):
+        for property in self:
+            property.best_price = max(property.offer_ids.mapped('price') or [0])
+
+    @api.depends('validity', 'create_date')
+    def _compute_date_deadline(self):
+        for property in self:
+            if property.create_date:
+                # Compute the date_deadline as the sum of create_date and validity
+                deadline_date = property.create_date + timedelta(days=property.validity)
+                property.date_deadline = fields.Date.to_string(deadline_date)
+            else:
+                property.date_deadline = False  # Fallback if create_date is not available
+
+    @api.onchange('garden')
+    def _onchange_garden(self):
+        """Set garden area and orientation based on garden field."""
+        if self.garden:
+            self.garden_area = 10  # Set default garden area
+            self.garden_orientation = 'north'  # Set default orientation
+        else:
+            self.garden_area = 0  # Clear the garden area
+            self.garden_orientation = False  # Clear the orientation
