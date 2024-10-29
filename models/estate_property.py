@@ -1,6 +1,7 @@
-# estate_property.py
 from datetime import date, timedelta  # Import the required modules
 from odoo import models, fields, api
+from odoo.exceptions import ValidationError  # Import ValidationError
+from odoo.tools.float_utils import float_compare, float_is_zero  # Import float comparison utilities
 
 class EstateProperty(models.Model):
     _name = 'estate.property'
@@ -15,18 +16,18 @@ class EstateProperty(models.Model):
     )
 
     buyer_id = fields.Many2one(
-        'res.partner', 
-        string="Buyer", 
+        'res.partner',
+        string="Buyer",
         copy=False  # Do not copy the buyer field
     )
     salesperson_id = fields.Many2one(
-        'res.users', 
-        string="Salesperson", 
+        'res.users',
+        string="Salesperson",
         default=lambda self: self.env.user  # Default to current user
     )
 
     property_type_id = fields.Many2one(
-        'estate.property.type', 
+        'estate.property.type',
         string="Property Type"
     )
 
@@ -38,6 +39,7 @@ class EstateProperty(models.Model):
         default=lambda self: fields.Date.to_string(date.today() + timedelta(days=90)),
         copy=False  # Prevent copying
     )
+    expected_price = fields.Float(string="Expected Price")  # Add expected price field
     selling_price = fields.Float(string="Selling Price", readonly=True, copy=False)  # Read-only and prevent copying
     bedrooms = fields.Integer(string="Bedrooms", default=2)
     living_area = fields.Integer(string="Living Area (sqm)")
@@ -118,3 +120,53 @@ class EstateProperty(models.Model):
         else:
             self.garden_area = 0  # Clear the garden area
             self.garden_orientation = False  # Clear the orientation
+
+    # Add SQL constraints
+    _sql_constraints = [
+        ('expected_price_positive', 'CHECK(expected_price > 0)', 'The expected price must be strictly positive.'),
+        ('selling_price_positive', 'CHECK(selling_price > 0)', 'The selling price must be strictly positive.'),
+    ]
+
+    # Add Python constraint to check selling price
+    @api.constrains('expected_price', 'selling_price')
+    def _check_selling_price(self):
+        for property in self:
+            if not float_is_zero(property.expected_price, precision_digits=2) and property.selling_price:
+                # Check if selling price is less than 90% of expected price
+                if float_compare(property.selling_price, property.expected_price * 0.9, precision_digits=2) < 0:
+                    raise ValidationError("The selling price cannot be lower than 90% of the expected price.")
+
+
+class EstatePropertyOffer(models.Model):
+    _name = 'estate.property.offer'
+    _description = 'Real Estate Property Offer'
+
+    property_id = fields.Many2one('estate.property', string="Property", required=True)
+    price = fields.Float(string="Offer Price", required=True)
+
+    # Add SQL constraint for the offer price
+    _sql_constraints = [
+        ('offer_price_positive', 'CHECK(price > 0)', 'The offer price must be strictly positive.'),
+    ]
+
+
+class EstatePropertyTag(models.Model):
+    _name = 'estate.property.tag'
+    _description = 'Property Tag'
+
+    name = fields.Char(string="Tag Name", required=True)
+
+    _sql_constraints = [
+        ('name_unique', 'UNIQUE(name)', 'The tag name must be unique.')
+    ]
+
+
+class EstatePropertyType(models.Model):
+    _name = 'estate.property.type'
+    _description = 'Property Type'
+
+    name = fields.Char(string="Type Name", required=True)
+
+    _sql_constraints = [
+        ('name_unique', 'UNIQUE(name)', 'The property type name must be unique.')
+    ]
