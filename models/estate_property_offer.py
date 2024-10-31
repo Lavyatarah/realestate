@@ -1,5 +1,5 @@
 # estate_property_offer.py
-from odoo import models, fields,api
+from odoo import models, fields, api
 from datetime import timedelta
 
 class EstatePropertyOffer(models.Model):
@@ -22,12 +22,28 @@ class EstatePropertyOffer(models.Model):
         string="Property",
         required=True
     )
+    property_type_id = fields.Many2one(
+        'estate.property.type',
+        string="Property Type",
+        related='property_id.property_type_id',
+        store=True
+    )
 
-# Validity field with default value
+    offer_count = fields.Integer(
+        string="Offer Count",
+        compute='_compute_offer_count'
+    )
+
+    # Validity field with default value
     validity = fields.Integer(string="Validity (Days)", default=7)
 
     # Date deadline computed field
-    date_deadline = fields.Date(string="Deadline", compute="_compute_date_deadline", inverse="_inverse_date_deadline", store=True)
+    date_deadline = fields.Date(
+        string="Deadline",
+        compute="_compute_date_deadline",
+        inverse="_inverse_date_deadline",
+        store=True
+    )
 
     @api.depends('create_date', 'validity')
     def _compute_date_deadline(self):
@@ -49,4 +65,3 @@ class EstatePropertyOffer(models.Model):
         for offer in self:
             if offer.create_date:
                 offer.validity = (offer.date_deadline - offer.create_date.date()).days
-

@@ -16,13 +16,19 @@ Long description of module's purpose
 
     'depends': ['base'],
 
-    'data': [
+   'data': [
         'security/ir.model.access.csv',
-        'views/estate_property_views.xml',  # Comma added
-        'views/views.xml',                   # Comma added
-        'views/templates.xml',               # Comma added
-        'views/estate_menus.xml',            # Comma added
+        'views/estate_property_type_views.xml',
+        'views/res_users_views.xml',
+        'views/estate_property_views.xml',
+        'views/views.xml',
+        'views/templates.xml',
+        'views/estate_menus.xml',
     ],
+
+    'installable': True,
+    'application': True,
+
     'demo': [
         'demo/demo.xml',
     ],

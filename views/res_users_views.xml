@@ -1,0 +1,20 @@
+<odoo>
+    <data>
+
+        <!-- Inherit the existing res.users form view -->
+        <record id="view_users_form_inherit_property_ids" model="ir.ui.view">
+            <field name="name">res.users.form.inherit.property_ids</field>
+            <field name="model">res.users</field>
+            <field name="inherit_id" ref="base.view_users_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//notebook" position="inside">
+                    <page string="Properties" name="properties_page">
+                        <field name="property_ids" context="{'default_salesperson_id': id}"/>
+                    </page>
+                </xpath>
+            </field>
+        </record>
+
+    </data>
+</odoo>
+

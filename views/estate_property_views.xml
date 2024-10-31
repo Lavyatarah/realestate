@@ -80,7 +80,7 @@
         <field name="name">estate.property.tree</field>
         <field name="model">estate.property</field>
         <field name="arch" type="xml">
-            <tree string="Properties">
+            <list string="Properties">
                 <field name="name"/>
                 <field name="property_type_id"/> <!-- Property Type -->
                 <field name="state"/>
@@ -90,7 +90,36 @@
                 <field name="active"/>
                 <field name="tag_ids"/> <!-- Added Tags Field -->
                 <field name="availability"/> <!-- Added Availability Field -->
-            </tree>
+            </list>
+        </field>
+    </record>
+
+     <!-- Kanban View for Estate Property -->
+    <record id="estate_property_view_kanban" model="ir.ui.view">
+        <field name="name">estate.property.kanban</field>
+        <field name="model">estate.property</field>
+        <field name="arch" type="xml">
+            <kanban>
+                <templates>
+                    <t t-name="kanban-box">
+                        <div class="oe_kanban_global_click">
+                            <strong><field name="name"/></strong>
+                            <div>
+                                <field name="expected_price"/>
+                            </div>
+                            <div t-if="record.state.raw_value == 'offer_received'">
+                                Best Price: <field name="best_price"/>
+                            </div>
+                            <div t-if="record.state.raw_value == 'offer_accepted'">
+                                Selling Price: <field name="selling_price"/>
+                            </div>
+                            <div>
+                                <field name="tag_ids" widget="many2many_tags"/>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
         </field>
     </record>
 
@@ -98,7 +127,7 @@
     <record id="action_estate_property" model="ir.actions.act_window">
         <field name="name">Estate Properties</field>
         <field name="res_model">estate.property</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
                 Define new estate properties
@@ -109,58 +138,6 @@
         </field>
     </record>
 
-    <!-- Menu for Estate Properties -->
-    <record id="menu_estate_property" model="ir.ui.menu">
-        <field name="name">Estate Properties</field>
-        <field name="action" ref="action_estate_property"/>
-    </record>
 
-    <!-- Form View for Estate Property Type -->
-    <record id="view_property_type_form" model="ir.ui.view">
-        <field name="name">estate.property.type.form</field>
-        <field name="model">estate.property.type</field>
-        <field name="arch" type="xml">
-            <form string="Property Type">
-                <sheet>
-                    <group>
-                        <field name="name"/> <!-- Property Type Name -->
-                    </group>
-                    <!-- Inline list of related properties -->
-                    <group>
-                        <field name="property_ids" widget="one2many_list">
-                            <tree>
-                                <field name="name"/>  <!-- Assuming 'name' is a field in estate.property -->
-                                <field name="selling_price"/>  <!-- Add more fields as necessary -->
-                                <field name="state"/>  <!-- Add other fields you want to display -->
-                            </tree>
-                        </field>
-                    </group>
-                </sheet>
-            </form>
-        </field>
-    </record>
 
-    <!-- Tree View for Estate Property Type -->
-    <record id="view_property_type_tree" model="ir.ui.view">
-        <field name="name">estate.property.type.tree</field>
-        <field name="model">estate.property.type</field>
-        <field name="arch" type="xml">
-            <tree string="Property Types">
-                <field name="name"/> <!-- Property Type Name -->
-            </tree>
-        </field>
-    </record>
-
-    <!-- Action to Open Estate Property Types -->
-    <record id="action_estate_property_type" model="ir.actions.act_window">
-        <field name="name">Property Types</field>
-        <field name="res_model">estate.property.type</field>
-        <field name="view_mode">tree,form</field>
-    </record>
-
-    <!-- Menu for Property Types -->
-    <record id="menu_estate_property_type" model="ir.ui.menu">
-        <field name="name">Property Types</field>
-        <field name="action" ref="action_estate_property_type"/>
-    </record>
 </odoo>

@@ -37,7 +37,7 @@ class EstateProperty(models.Model):
     date_availability = fields.Date(
         string="Date of Availability",
         default=lambda self: fields.Date.to_string(date.today() + timedelta(days=90)),
-        copy=False  # Prevent copying
+        copy=False  # Prevent copyingfv
     )
     expected_price = fields.Float(string="Expected Price")  # Add expected price field
     selling_price = fields.Float(string="Selling Price", readonly=True, copy=False)  # Read-only and prevent copying
@@ -121,6 +121,12 @@ class EstateProperty(models.Model):
             self.garden_area = 0  # Clear the garden area
             self.garden_orientation = False  # Clear the orientation
 
+    @api.model
+    def unlink(self):
+        for property in self:
+            if property.state not in ['new', 'cancelled']:
+                raise ValidationError("You cannot delete a property that is not 'New' or 'Cancelled'.")
+        return super(EstateProperty, self).unlink()
     # Add SQL constraints
     _sql_constraints = [
         ('expected_price_positive', 'CHECK(expected_price > 0)', 'The expected price must be strictly positive.'),
@@ -135,38 +141,3 @@ class EstateProperty(models.Model):
                 # Check if selling price is less than 90% of expected price
                 if float_compare(property.selling_price, property.expected_price * 0.9, precision_digits=2) < 0:
                     raise ValidationError("The selling price cannot be lower than 90% of the expected price.")
-
-
-class EstatePropertyOffer(models.Model):
-    _name = 'estate.property.offer'
-    _description = 'Real Estate Property Offer'
-
-    property_id = fields.Many2one('estate.property', string="Property", required=True)
-    price = fields.Float(string="Offer Price", required=True)
-
-    # Add SQL constraint for the offer price
-    _sql_constraints = [
-        ('offer_price_positive', 'CHECK(price > 0)', 'The offer price must be strictly positive.'),
-    ]
-
-
-class EstatePropertyTag(models.Model):
-    _name = 'estate.property.tag'
-    _description = 'Property Tag'
-
-    name = fields.Char(string="Tag Name", required=True)
-
-    _sql_constraints = [
-        ('name_unique', 'UNIQUE(name)', 'The tag name must be unique.')
-    ]
-
-
-class EstatePropertyType(models.Model):
-    _name = 'estate.property.type'
-    _description = 'Property Type'
-
-    name = fields.Char(string="Type Name", required=True)
-
-    _sql_constraints = [
-        ('name_unique', 'UNIQUE(name)', 'The property type name must be unique.')
-    ]
